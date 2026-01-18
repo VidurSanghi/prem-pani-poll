@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pani Vote</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #ffeef8 0%, #e6f3ff 100%);
+            padding: 20px;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 4rem;
+            text-align: center;
+            color: #2d2d2d;
+            font-weight: 400;
+            letter-spacing: 1px;
+        }
+        
+        .vote-container {
+            display: flex;
+            gap: 3rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .vote-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .vote-button {
+            width: 180px;
+            height: 180px;
+            border: 4px solid;
+            border-radius: 8px;
+            font-size: 1.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            position: relative;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            font-family: 'Noto Sans JP', sans-serif;
+        }
+        
+        .vote-button::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            background: inherit;
+            z-index: -1;
+            opacity: 0.3;
+            filter: blur(10px);
+            transition: opacity 0.3s ease;
+        }
+        
+        .vote-button:hover:not(:disabled)::before {
+            opacity: 0.6;
+        }
+        
+        .vote-button:hover:not(:disabled) {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+        }
+        
+        .vote-button:active:not(:disabled) {
+            transform: translateY(-2px);
+        }
+        
+        .vote-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .red-button {
+            background: #c9252d;
+            border-color: #a01f24;
+        }
+        
+        .green-button {
+            background: #2d8659;
+            border-color: #1e5c3d;
+        }
+        
+        .vote-label {
+            font-size: 1.1rem;
+            color: #2d2d2d;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+        }
+        
+        .voted {
+            margin-top: 3rem;
+            padding: 1.5rem 3rem;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: none;
+            text-align: center;
+            border: 2px solid #ffb8d1;
+        }
+        
+        .voted.show {
+            display: block;
+        }
+        
+        .voted p {
+            color: #2d2d2d;
+            font-size: 1.1rem;
+            letter-spacing: 0.5px;
+        }
+        
+        .loading {
+            margin-top: 1.5rem;
+            color: #555;
+            font-size: 0.95rem;
+            letter-spacing: 0.5px;
+        }
+        
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .vote-button {
+                width: 140px;
+                height: 140px;
+                font-size: 1.4rem;
+            }
+            
+            .vote-container {
+                gap: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Please vote for which pani you preferred</h1>
+    
+    <div class="vote-container">
+        <div class="vote-option">
+            <button class="vote-button red-button" id="redBtn" onclick="vote('red')">RED</button>
+        </div>
+        
+        <div class="vote-option">
+            <button class="vote-button green-button" id="greenBtn" onclick="vote('green')">GREEN</button>
+        </div>
+    </div>
+    
+    <div class="voted" id="confirmation">
+        <p>Thank you for voting!</p>
+    </div>
+    
+    <div class="loading" id="loading" style="display:none;">Recording your vote...</div>
+
+    <script>
+        // REPLACE THIS URL WITH YOUR GOOGLE APPS SCRIPT WEB APP URL
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwHas6b7ldq34LzkT5EYD6Y0DYlvsD2mKPptEHkLcdX8HesczEl-fMiHKJ_2aJDxO1rxA/exec';
+        
+        async function vote(choice) {
+            try {
+                // Disable buttons
+                document.getElementById('redBtn').disabled = true;
+                document.getElementById('greenBtn').disabled = true;
+                document.getElementById('loading').style.display = 'block';
+                
+                // Send vote to Google Sheets
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        choice: choice,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                // Show confirmation
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('confirmation').classList.add('show');
+                
+            } catch (error) {
+                console.error('Error recording vote:', error);
+                document.getElementById('loading').style.display = 'none';
+                alert('There was an error recording your vote. Please try again.');
+                document.getElementById('redBtn').disabled = false;
+                document.getElementById('greenBtn').disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
